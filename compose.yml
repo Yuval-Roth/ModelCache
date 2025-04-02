@@ -1,0 +1,45 @@
+name: modelcache
+
+services:
+  mysql:
+    image: mysql:8.0.23
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'modelcache'
+      MYSQL_USER: 'modelcache'
+      MYSQL_PASSWORD: 'modelcache'
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data/mysql/db:/var/lib/mysql
+      - ./data/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./data/mysql/init:/docker-entrypoint-initdb.d
+    restart: on-failure
+
+  milvus:
+    image: milvusdb/milvus:v2.5.0-beta
+    container_name: milvus
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_USE_EMBED: true
+      ETCD_DATA_DIR: /var/lib/milvus/etcd
+      ETCD_CONFIG_PATH: /milvus/configs/embedEtcd.yaml
+      COMMON_STORAGETYPE: local
+    volumes:
+      - ./data/milvus/db:/var/lib/milvus
+      - ./data/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ./data/milvus/user.yaml:/milvus/configs/user.yaml
+    ports:
+      - 19530:19530
+      - 9091:9091
+      - 2379:2379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    restart: on-failure  
+    command: milvus run standalone
