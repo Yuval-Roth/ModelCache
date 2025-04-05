@@ -115,7 +115,7 @@ class SQLStorage(CacheStorage):
             conn.close()
 
     # def get_data_by_id(self, key: int):
-    #     table_name = "cache_codegpt_answer"
+    #     table_name = "modelcache_llm_answer"
     #     query_sql = "select question, answer, embedding_data, model from {} where id={}".format(table_name, key)
     #     conn_start = time.time()
     #     conn = self.pool.connection()

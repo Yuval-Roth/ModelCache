@@ -10,7 +10,7 @@ CREATE TABLE `modelcache_llm_answer` (
   `embedding_data` blob NOT NULL comment 'embedding_data',
   `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'delete state(0 Not deleted,-1 deleted)',
   PRIMARY KEY(`id`)
-) AUTO_INCREMENT = 1 DEFAULT CHARSET = utf8mb4 COMMENT = 'cache_codegpt_answer';
+) AUTO_INCREMENT = 1 DEFAULT CHARSET = utf8mb4 COMMENT = 'modelcache_llm_answer';
 
 
 CREATE TABLE `modelcache_query_log` (
