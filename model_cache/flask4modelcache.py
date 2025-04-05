@@ -68,12 +68,12 @@ def first_flask():  # 视图函数
 
 @app.route('/modelcache', methods=['GET', 'POST'])
 def user_backend():
+    param_dict = []
     try:
         if request.method == 'POST':
-            request_data = request.json
+            param_dict = request.json
         elif request.method == 'GET':
-            request_data = request.args
-        param_dict = json.loads(request_data)
+            param_dict = request.args
     except Exception as e:
         result = {"errorCode": 101, "errorDesc": str(e), "cacheHit": False, "delta_time": 0, "hit_query": '',
                   "answer": ''}

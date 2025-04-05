@@ -21,6 +21,7 @@ fun main() {
                 val chatInfo = mutableListOf<Query>()
                 while(true){
                     val entries = getQueryEntries()
+                    println()
                     println("Enter output:")
                     print(">> ")
                     val output = readlnOrNull()
@@ -146,16 +147,10 @@ fun clearCache(): String {
 }
 
 fun sendRequest(request: ModelCacheRequest): String {
-    // NOTE:
-    // Serialization is done twice here because the ModelCache backend
-    // deserializes the request twice for some reason
-    var body = request.toJson()
-    body = JsonUtils.serialize(body,true)
-
     val response = RestApiClient()
         .withUri(URL)
         .withHeader("Content-Type", "application/json")
-        .withBody(body)
+        .withBody(request.toJson())
         .withPost()
         .send()
     return response
