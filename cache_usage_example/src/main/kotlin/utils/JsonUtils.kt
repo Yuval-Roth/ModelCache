@@ -6,7 +6,18 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+/**
+ * Serialize an object to JSON string.
+ *
+ * Uses [JsonUtils.serialize]
+ */
 fun Any.toJson(): String = JsonUtils.serialize(this)
+
+/**
+ * Deserialize a JSON string to an object of type T.
+ *
+ * Uses [JsonUtils.deserialize]
+ */
 inline fun <reified T> fromJson(json: String): T = JsonUtils.deserialize(json, T::class.java)
 
 object JsonUtils {
@@ -17,6 +28,11 @@ object JsonUtils {
         .enableComplexMapKeySerialization()
         .create()
 
+    /**
+     * Serialize an object to JSON string.
+     *
+     * @param serializeStrings if true, serialize strings as JSON strings, otherwise strings are not serialized and are returned as is
+     */
     fun serialize(obj: Any, serializeStrings: Boolean = false): String {
         if (! serializeStrings && obj is String) return obj
         return gson.toJson(obj)

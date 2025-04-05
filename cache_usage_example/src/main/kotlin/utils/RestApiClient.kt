@@ -16,7 +16,11 @@ class RestApiClient {
     private var body: String = ""
     private var isPost = false
 
-    @Throws(IOException::class, InterruptedException::class, IllegalStateException::class)
+    /**
+     * @throws IOException if there is an error sending the request
+     * @throws InterruptedException if the operation is interrupted
+     * @throws IllegalStateException if the URI is not set or there are any issues with the request
+     */
     fun send(): String {
 
         val uri = this.uri ?: throw IllegalStateException("URI is required")
@@ -47,7 +51,7 @@ class RestApiClient {
     }
 
     /**
-     * Set the body of the request. Must be used with [.withPost] to have
+     * Set the body of the request. Must be used with [withPost] to have
      * any effect
      */
     fun withBody(body: String) = apply {
@@ -55,13 +59,21 @@ class RestApiClient {
     }
 
     /**
-     * Set the request method to POST. If [.withBody] is not called,
+     * Set the request method to POST. If [withBody] is not called,
      * the body will be empty
      */
     fun withPost() = apply {
         isPost = true
     }
 
+    /**
+     * Set the URI of the request.
+     *
+     * Must not be blank and must not contain
+     * query parameters ('?', '&', '=') or spaces.
+     *
+     * @throws IllegalStateException if there are any issues with the URI
+     */
     fun withUri(uri: String) = apply {
         assert(uri.isNotBlank()) { "URI should not be blank" }
         assert(!uri.contains("?")) { "URI should not contain query parameters" }
@@ -72,20 +84,38 @@ class RestApiClient {
         this.uri = uri
     }
 
+    /**
+     * Set a header for the request.
+     * @throws IllegalStateException if the header is already set
+     */
     fun withHeader(key: String, value: String) = apply {
         assert(!headers.containsKey(key)) { "Header %s set more than once".format(key) }
         headers[key] = value
     }
 
+    /**
+     * Set a parameter for the request.
+     * @throws IllegalStateException if the parameter is already set
+     */
     fun withParam(key: String, value: String) = apply {
         assert(!params.containsKey(key)) { "Param %s set more than once".format(key) }
         params[key] = value.replace(" ".toRegex(), "%20") // replace spaces with %20
     }
 
+    /**
+     * Set multiple parameters for the request.
+     * @param params a map of parameters to set
+     * @throws IllegalStateException if any parameter is already set
+     */
     fun withParams(params: Map<String, String>) = apply {
         params.forEach { (key: String, value: String) -> this.withParam(key, value) }
     }
 
+    /**
+     * Set multiple parameters for the request.
+     * @param params a vararg of pairs of parameters to set
+     * @throws IllegalStateException if any parameter is already set
+     */
     @SafeVarargs
     fun withParams(vararg params: Pair<String, String>) = apply {
         Arrays.stream(params).forEach { p: Pair<String, String> -> this.withParam(p.first, p.second) }

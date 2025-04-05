@@ -1,10 +1,9 @@
 
 import ModelCacheRequest.*
-import utils.JsonUtils
 import utils.RestApiClient
 import utils.toJson
 
-const val URL = "http://localhost:5000/modelcache"
+const val URI = "http://localhost:5000/modelcache"
 
 fun main() {
     while(true){
@@ -75,7 +74,7 @@ fun main() {
 
 }
 
-private fun getQueryEntries(): MutableList<QueryEntry> {
+private fun getQueryEntries(): List<QueryEntry> {
     println()
     println("Enter input data:")
     println()
@@ -148,7 +147,7 @@ fun clearCache(): String {
 
 fun sendRequest(request: ModelCacheRequest): String {
     val response = RestApiClient()
-        .withUri(URL)
+        .withUri(URI)
         .withHeader("Content-Type", "application/json")
         .withBody(request.toJson())
         .withPost()
