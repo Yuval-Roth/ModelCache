@@ -137,8 +137,6 @@ dmypy.json
 *.bin
 **/maya_embedding_service
 
-*.ini
-
 **/multicache_serving.py
 **/modelcache_serving.py
 
