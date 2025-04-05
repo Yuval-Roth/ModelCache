@@ -8,6 +8,7 @@ const val URL = "http://localhost:5000/modelcache"
 
 fun main() {
     while(true){
+        println("Welcome to ModelCache example CLI")
         println("Select an option:")
         println("1. Insert to cache")
         println("2. Query cache")
@@ -28,6 +29,7 @@ fun main() {
                         continue
                     }
                     chatInfo.add(Query(entries, output))
+                    println()
                     println("Do you want to add more entries? (y/n)")
                     print(">> ")
                     val addMore = readlnOrNull()
@@ -73,7 +75,9 @@ fun main() {
 }
 
 private fun getQueryEntries(): MutableList<QueryEntry> {
-    println("Enter input data\n")
+    println()
+    println("Enter input data:")
+    println()
     val entries = mutableListOf<QueryEntry>()
     var firstTime = true
     while (true) {
@@ -145,7 +149,8 @@ fun sendRequest(request: ModelCacheRequest): String {
     // NOTE:
     // Serialization is done twice here because the ModelCache backend
     // deserializes the request twice for some reason
-    val body = JsonUtils.serialize(request.toJson(),true)
+    var body = request.toJson()
+    body = JsonUtils.serialize(body,true)
 
     val response = RestApiClient()
         .withUri(URL)
