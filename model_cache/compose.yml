@@ -1,4 +1,7 @@
 name: modelcache
+networks:
+    modelcache:
+      driver: bridge
 
 services:
   mysql:
@@ -16,6 +19,8 @@ services:
       - ./data/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
       - ./data/mysql/init:/docker-entrypoint-initdb.d
     restart: on-failure
+    networks:
+      - modelcache
 
   milvus:
     image: milvusdb/milvus:v2.5.0-beta
@@ -43,3 +48,5 @@ services:
       retries: 3
     restart: on-failure  
     command: milvus run standalone
+    networks:
+      - modelcache
