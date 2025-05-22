@@ -285,15 +285,24 @@ class SSDataManager(DataManager):
         return {'status': 'success', 'VectorDB': 'rebuild', 'ScalarDB': 'delete_count: ' + str(delete_count)}
 
     # added
-    def _evict_ids(self, ids):
+    def _evict_ids(self, ids, **kwargs):
+        if not ids or any(i is None for i in ids):
+            modelcache_log.warning("Skipping eviction for invalid IDs: %s", ids)
+            return
+
+        model = kwargs.get("model", None)
+
         try:
             self.s.mark_deleted(ids)
+            modelcache_log.info("Evicted from scalar storage: %s", ids)
         except Exception as e:
             modelcache_log.error("Failed to delete from scalar storage: %s", str(e))
+
         try:
-            self.v.delete(ids)
+            self.v.delete(ids, model=model)
+            modelcache_log.info("Evicted from vector storage (model=%s): %s", model, ids)
         except Exception as e:
-            modelcache_log.error("Failed to delete from vector storage: %s", str(e))
+            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", model, str(e))
 
     def flush(self):
         self.s.flush()
