@@ -220,7 +220,8 @@ class SSDataManager(DataManager):
             cache_datas.append([ans, question, embedding_data, model])
 
         ids = self.s.batch_insert(cache_datas)
-        self.eviction_base.put(ids) #added
+        for i, id in enumerate(ids):                       #Add whole data to RAM Cache
+            self.eviction_base.put([(id, cache_datas[i])]) #Add whole data to RAM Cache
         self.v.mul_add(
             [
                 VectorData(id=ids[i], data=embedding_data)
@@ -231,6 +232,12 @@ class SSDataManager(DataManager):
         )
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
+        #Get Data from RAM Cache
+        id = res_data[1]
+        cache_hit = self.eviction_base.get(id)
+        if cache_hit is not None:
+            return cache_hit  # ✅ Return from RAM
+        # ❌ Fall back to disk/DB only if not in RAM
         cache_data = self.s.get_data_by_id(res_data[1])
         if cache_data is None:
             return None
@@ -251,6 +258,8 @@ class SSDataManager(DataManager):
     def delete(self, id_list, **kwargs):
         model = kwargs.pop("model", None)
         try:
+            for id in id_list:
+                self.eviction_base._cache.pop(id, None)  # Remove from in-memory LRU too
             v_delete_count = self.v.delete(ids=id_list, model=model)
         except Exception as e:
             return {'status': 'failed', 'milvus': 'delete milvus data failed, please check! e: {}'.format(e),
@@ -291,6 +300,8 @@ class SSDataManager(DataManager):
             return
 
         model = kwargs.get("model", None)
+        for id in ids:
+            self.eviction_base._cache.pop(id, None)
 
         try:
             self.s.mark_deleted(ids)

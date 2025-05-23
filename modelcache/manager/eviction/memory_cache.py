@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Tuple
 import cachetools
 
 from modelcache.manager.eviction.base import EvictionBase
@@ -38,9 +38,9 @@ class MemoryCacheEviction(EvictionBase):
 
         self._cache.popitem = popitem_wrapper(self._cache.popitem, on_evict, clean_size)
 
-    def put(self, objs: List[Any]):
-        for obj in objs:
-            self._cache[obj] = True
+    def put(self, objs: List[Tuple[Any, Any]]):
+        for key, value in objs:
+            self._cache[key] = value                         #Changed from TRUE to value
 
     def get(self, obj: Any):
         return self._cache.get(obj)
