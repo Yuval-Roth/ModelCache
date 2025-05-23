@@ -3,8 +3,8 @@ from typing import Any, Callable, List
 import cachetools
 
 from modelcache.manager.eviction.base import EvictionBase
+from .arc_cache import ARC
 from .wtinylfu_cache import WTinyLFUEviction
-
 
 
 def popitem_wrapper(func, wrapper_func, clean_size):
@@ -31,6 +31,8 @@ class MemoryCacheEviction(EvictionBase):
             self._cache = cachetools.RRCache(maxsize=maxsize, **kwargs)
         elif self._policy == "WTINYLFU":
             self._cache = WTinyLFUEviction(maxsize=maxsize, on_evict=on_evict)
+        elif self._policy == "ARC":
+            self._cache = ARC(maxsize=maxsize)
         else:
             raise ValueError(f"Unknown policy {policy}")
 
