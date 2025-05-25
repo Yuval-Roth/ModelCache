@@ -9,7 +9,7 @@ def get_data_manager(
     vector_base: Union[VectorBase, str] = None,
     object_base: Union[ObjectBase, str] = None,
     max_size: int = 3,
-    clean_size: int = None,
+    clean_size: int = 1,
     eviction: str = "WTINYLFU",
     data_path: str = "data_map.txt",
     get_data_container: Callable = None,

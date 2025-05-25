@@ -32,7 +32,7 @@ class MemoryCacheEviction(EvictionBase):
         elif self._policy == "WTINYLFU":
             self._cache = WTinyLFUEviction(maxsize=maxsize, on_evict=on_evict)
         elif self._policy == "ARC":
-            self._cache = ARC(maxsize=maxsize)
+            self._cache = ARC(maxsize=maxsize, on_evict=on_evict)
         else:
             raise ValueError(f"Unknown policy {policy}")
 
