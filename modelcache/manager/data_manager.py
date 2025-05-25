@@ -158,6 +158,7 @@ class SSDataManager(DataManager):
         self.s = s
         self.v = v
         self.o = o
+        self.model = None
 
         # added
         self.eviction_base = MemoryCacheEviction(
@@ -168,6 +169,7 @@ class SSDataManager(DataManager):
 
     def save(self, question, answer, embedding_data, **kwargs):
         model = kwargs.pop("model", None)
+        self.model = model
         self.import_data([question], [answer], [embedding_data], model)
 
     def save_query_resp(self, query_resp_dict, **kwargs):
@@ -257,6 +259,7 @@ class SSDataManager(DataManager):
 
     def delete(self, id_list, **kwargs):
         model = kwargs.pop("model", None)
+        print(f"delete called with model={model}")
         try:
             for id in id_list:
                 self.eviction_base._cache.pop(id, None)  # Remove from in-memory LRU too
@@ -276,10 +279,11 @@ class SSDataManager(DataManager):
     def create_index(self, model, **kwargs):
         return self.v.create(model)
 
-    def truncate(self, model_name):
+    def truncate(self, model):
         # drop vector base data
+
         try:
-            vector_resp = self.v.rebuild_col(model_name)
+            vector_resp = self.v.rebuild_col(model)
         except Exception as e:
             return {'status': 'failed', 'VectorDB': 'truncate VectorDB data failed, please check! e: {}'.format(e),
                     'ScalarDB': 'unexecuted'}
@@ -287,19 +291,17 @@ class SSDataManager(DataManager):
             return {'status': 'failed', 'VectorDB': vector_resp, 'ScalarDB': 'unexecuted'}
         # drop scalar base data
         try:
-            delete_count = self.s.model_deleted(model_name)
+            delete_count = self.s.model_deleted(model)
         except Exception as e:
             return {'status': 'failed', 'VectorDB': 'rebuild',
                     'ScalarDB': 'truncate scalar data failed, please check! e: {}'.format(e)}
         return {'status': 'success', 'VectorDB': 'rebuild', 'ScalarDB': 'delete_count: ' + str(delete_count)}
 
     # added
-    def _evict_ids(self, ids, **kwargs):
+    def _evict_ids(self, ids):
         if not ids or any(i is None for i in ids):
             modelcache_log.warning("Skipping eviction for invalid IDs: %s", ids)
             return
-
-        model = kwargs.get("model", None)
         for id in ids:
             self.eviction_base._cache.pop(id, None)
 
@@ -310,10 +312,10 @@ class SSDataManager(DataManager):
             modelcache_log.error("Failed to delete from scalar storage: %s", str(e))
 
         try:
-            self.v.delete(ids, model=model)
-            modelcache_log.info("Evicted from vector storage (model=%s): %s", model, ids)
+            self.v.delete(ids, model=self.model)
+            modelcache_log.info("Evicted from vector storage (model=%s): %s", self.model, ids)
         except Exception as e:
-            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", model, str(e))
+            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", self.model, str(e))
 
     def flush(self):
         self.s.flush()
