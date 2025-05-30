@@ -6,7 +6,7 @@ import configparser
 import json
 from modelcache import cache
 from modelcache.adapter import adapter
-from modelcache.embedding.Word2Vec import Word2Vec
+from modelcache.embedding.Text2Vec import Text2Vec
 from modelcache.manager import CacheBase, VectorBase, get_data_manager
 from modelcache.similarity_evaluation.distance import SearchDistanceEvaluation
 from modelcache.processor.pre import query_multi_splicing
@@ -62,7 +62,7 @@ data_manager = get_data_manager(CacheBase("mysql", config=mysql_config),
 USING_WORD2VEC = True
 
 if USING_WORD2VEC:
-    embedding_func = lambda x: Word2Vec().embedding_func(x)
+    embedding_func = lambda x: Text2Vec().embedding_func(x)
 else:
     embedding_func = data2vec.to_embeddings
 ######
