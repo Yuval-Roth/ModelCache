@@ -13,6 +13,7 @@ class Text2Vec:
         cwd = os.getcwd()
         base_options = python.BaseOptions(model_asset_path=  cwd+'/model/embedder.tflite')
         self.options = text.TextEmbedderOptions(base_options=base_options, l2_normalize=l2_normalize, quantize=quantize)
+        self.dimension = 512
         pass
 
     def embedding_func(self, *args, **kwargs):
@@ -20,13 +21,13 @@ class Text2Vec:
             raise ValueError("No word provided for embedding.")
         # Use it
         with text.TextEmbedder.create_from_options(self.options) as embedder:
-            vector = embedder.embed(args[0])  # returns a 300-dim vector
-            return vector
+            result = embedder.embed(args[0])  # returns a 300-dim vector
+            return result.embeddings[0].embedding
 
 
 if __name__ == '__main__':
     word2vec = Text2Vec()
-    print(word2vec.embedding_func("hello world!"))
+    print(len(word2vec.embedding_func("hello world! HUIAWHGFI AWGAUIWHGA AWUHGAWIUGA WGUIAHWGIUAW GAWUGHAWIUGA WGUIAWHGIUAWHGIUAWGN").embeddings.pop().embedding))
 
 ######
 
