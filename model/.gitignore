@@ -1,1 +1,2 @@
 *.tflite
+text2vec-base-chinese/*

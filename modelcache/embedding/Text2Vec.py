@@ -4,7 +4,8 @@ import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import text
 
-# wget -O embedder.tflite -q https://storage.googleapis.com/mediapipe-models/text_embedder/bert_embedder/float32/1/bert_embedder.tflite
+# model download link:
+# https://storage.googleapis.com/mediapipe-models/text_embedder/bert_embedder/float32/1/bert_embedder.tflite
 
 class Text2Vec:
     def __init__(self):
@@ -23,11 +24,6 @@ class Text2Vec:
         with text.TextEmbedder.create_from_options(self.options) as embedder:
             result = embedder.embed(args[0])  # returns a 300-dim vector
             return result.embeddings[0].embedding
-
-
-if __name__ == '__main__':
-    word2vec = Text2Vec()
-    print(len(word2vec.embedding_func("hello world! HUIAWHGFI AWGAUIWHGA AWUHGAWIUGA WGUIAHWGIUAW GAWUGHAWIUGA WGUIAWHGIUAWHGIUAWGN").embeddings.pop().embedding))
 
 ######
 

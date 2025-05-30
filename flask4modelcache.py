@@ -31,17 +31,15 @@ def save_query_info(result, model, query, delta_time_log):
 def response_hitquery(cache_resp):
     return cache_resp['hitQuery']
 
-
-data2vec = Data2VecAudio()
-text2vec = Text2Vec()
-
 ###### YO
 USING_TEXT2VEC = True
 
 if USING_TEXT2VEC:
+    text2vec = Text2Vec()
     embedding_func = lambda x: text2vec.embedding_func(x)
     dimension =  text2vec.dimension
 else:
+    data2vec = Data2VecAudio()
     embedding_func = data2vec.to_embeddings
     dimension = data2vec.dimension
 ######
