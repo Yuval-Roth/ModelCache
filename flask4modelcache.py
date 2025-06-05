@@ -6,7 +6,7 @@ import configparser
 import json
 from modelcache import cache
 from modelcache.adapter import adapter
-from modelcache.embedding.Word2Vec import Word2Vec
+from modelcache.embedding.Text2Vec import Text2Vec
 from modelcache.manager import CacheBase, VectorBase, get_data_manager
 from modelcache.similarity_evaluation.distance import SearchDistanceEvaluation
 from modelcache.processor.pre import query_multi_splicing
@@ -31,8 +31,19 @@ def save_query_info(result, model, query, delta_time_log):
 def response_hitquery(cache_resp):
     return cache_resp['hitQuery']
 
+###### YO
+USING_TEXT2VEC = True
 
-data2vec = Data2VecAudio()
+if USING_TEXT2VEC:
+    text2vec = Text2Vec()
+    embedding_func = lambda x: text2vec.embedding_func(x)
+    dimension =  text2vec.dimension
+else:
+    data2vec = Data2VecAudio()
+    embedding_func = data2vec.to_embeddings
+    dimension = data2vec.dimension
+######
+
 mysql_config = configparser.ConfigParser()
 mysql_config.read('modelcache/config/mysql_config.ini')
 
@@ -49,7 +60,7 @@ milvus_config.read('modelcache/config/milvus_config.ini')
 # chromadb_config.read('modelcache/config/chromadb_config.ini')
 
 data_manager = get_data_manager(CacheBase("mysql", config=mysql_config),
-                                VectorBase("milvus", dimension=data2vec.dimension, milvus_config=milvus_config))
+                                VectorBase("milvus", dimension=dimension, milvus_config=milvus_config))
 
 
 # data_manager = get_data_manager(CacheBase("mysql", config=mysql_config),
@@ -58,14 +69,6 @@ data_manager = get_data_manager(CacheBase("mysql", config=mysql_config),
 # data_manager = get_data_manager(CacheBase("mysql", config=mysql_config),
 #                                 VectorBase("redis", dimension=data2vec.dimension, redis_config=redis_config))
 
-###### YO
-USING_WORD2VEC = True
-
-if USING_WORD2VEC:
-    embedding_func = lambda x: Word2Vec().embedding_func(x)
-else:
-    embedding_func = data2vec.to_embeddings
-######
 cache.init(
     embedding_func=embedding_func,
     data_manager=data_manager,

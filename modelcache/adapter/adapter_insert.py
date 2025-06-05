@@ -21,20 +21,22 @@ def adapt_insert(*args, **kwargs):
         prompts=chat_cache.config.prompts,
     )
     chat_info = kwargs.pop("chat_info", [])
-    llm_data = chat_info[-1]['answer']
 
-    if cache_enable:
-        embedding_data = time_cal(
-            chat_cache.embedding_func,
-            func_name="embedding",
-            report_func=chat_cache.report.embedding,
-        )(pre_embedding_data)
 
-    chat_cache.data_manager.save(
-        pre_embedding_data,
-        llm_data,
-        embedding_data,
-        model=model,
-        extra_param=context.get("save_func", None)
-    )
+    for row in chat_info:
+        llm_data = row['answer']
+        if cache_enable:
+            embedding_data = time_cal(
+                chat_cache.embedding_func,
+                func_name="embedding",
+                report_func=chat_cache.report.embedding,
+            )(pre_embedding_data)
+
+        chat_cache.data_manager.save(
+            pre_embedding_data,
+            llm_data,
+            embedding_data,
+            model=model,
+            extra_param=context.get("save_func", None)
+        )
     return 'success'
