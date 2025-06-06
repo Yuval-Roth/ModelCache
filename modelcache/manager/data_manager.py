@@ -21,6 +21,7 @@ from modelcache.manager.eviction import EvictionBase
 from modelcache.manager.eviction_manager import EvictionManager
 from modelcache.utils.log import modelcache_log
 
+NORMALIZE = True
 
 class DataManager(metaclass=ABCMeta):
     """DataManager manage the cache data, including save and search"""
@@ -235,7 +236,8 @@ class SSDataManager(DataManager):
 
     def search(self, embedding_data, **kwargs):
         model = kwargs.pop("model", None)
-        embedding_data = normalize(embedding_data)
+        if NORMALIZE:
+            embedding_data = normalize(embedding_data)
         top_k = kwargs.get("top_k", -1)
         return self.v.search(data=embedding_data, top_k=top_k, model=model)
 

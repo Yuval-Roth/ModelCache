@@ -7,7 +7,7 @@ import json
 from modelcache import cache
 from modelcache.adapter import adapter
 from modelcache.embedding.Text2Vec import Text2Vec
-from modelcache.manager import CacheBase, VectorBase, get_data_manager
+from modelcache.manager import CacheBase, VectorBase, get_data_manager, data_manager
 from modelcache.similarity_evaluation.distance import SearchDistanceEvaluation
 from modelcache.processor.pre import query_multi_splicing
 from modelcache.processor.pre import insert_multi_splicing
@@ -38,6 +38,7 @@ if USING_TEXT2VEC:
     text2vec = Text2Vec()
     embedding_func = lambda x: text2vec.embedding_func(x)
     dimension =  text2vec.dimension
+    data_manager.NORMALIZE = False
 else:
     data2vec = Data2VecAudio()
     embedding_func = data2vec.to_embeddings
