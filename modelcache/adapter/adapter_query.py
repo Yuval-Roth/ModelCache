@@ -124,13 +124,13 @@ def adapt_query(cache_data_convert, *args, **kwargs):
 
                 if len(pre_embedding_data) <= 256:
                     if rank_threshold <= rank:
-                        cache_questions.append((rank, ret[0]))
-                        cache_answers.append((rank, ret[1]))
+                        cache_answers.append((rank, ret[0]))
+                        cache_questions.append((rank, ret[1]))
                         cache_ids.append((rank, primary_id))
                 else:
                     if rank_threshold_long <= rank:
-                        cache_questions.append((rank, ret[0]))
-                        cache_answers.append((rank, ret[1]))
+                        cache_answers.append((rank, ret[0]))
+                        cache_questions.append((rank, ret[1]))
                         cache_ids.append((rank, primary_id))
         else:
             # 不使用 reranker 时，走原来的逻辑

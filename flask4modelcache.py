@@ -71,7 +71,7 @@ data_manager = get_data_manager(
                index_params={
                    "metric_type": "COSINE",
                    "index_type": "HNSW",
-                   "params": {"M": 16, "efConstruction": 128},
+                   "params": {"M": 16, "efConstruction": 64},
                 } if manager.MPNet_base else None,
                 search_params={
                     "IVF_FLAT": {"metric_type": "COSINE", "params": {"nprobe": 10}},
