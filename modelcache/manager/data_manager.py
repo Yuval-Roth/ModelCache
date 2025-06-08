@@ -160,7 +160,6 @@ class SSDataManager(DataManager):
         self.s = s
         self.v = v
         self.o = o
-        self.model = None
 
         # added
         self.eviction_base = MemoryCacheEviction(
@@ -229,10 +228,7 @@ class SSDataManager(DataManager):
             _id = ids[i]
             datas.append(VectorData(id=_id, data=embedding_data.astype("float32")))
             self.eviction_base.put([(_id, cache_datas[i])],model=model)
-        self.v.mul_add(
-            datas,
-            model
-        )
+        self.v.mul_add(datas,model)
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
         model = kwargs.pop("model")
@@ -261,7 +257,6 @@ class SSDataManager(DataManager):
 
     def delete(self, id_list, **kwargs):
         model = kwargs.pop("model")
-        print(f"delete called with model={model}")
         try:
             for id in id_list:
                 self.eviction_base.get_cache(model).pop(id, None)  # Remove from in-memory LRU too
@@ -320,9 +315,9 @@ class SSDataManager(DataManager):
 
         try:
             self.v.delete(ids, model=model)
-            modelcache_log.info("Evicted from vector storage (model=%s): %s", self.model, ids)
+            modelcache_log.info("Evicted from vector storage (model=%s): %s", model, ids)
         except Exception as e:
-            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", self.model, str(e))
+            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", model, str(e))
 
     def flush(self):
         self.s.flush()
