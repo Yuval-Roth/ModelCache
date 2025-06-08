@@ -128,3 +128,4 @@ class CacheStorage(metaclass=ABCMeta):
     @abstractmethod
     def close(self):
         pass
+

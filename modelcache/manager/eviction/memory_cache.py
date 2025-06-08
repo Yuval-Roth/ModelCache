@@ -4,7 +4,7 @@ import cachetools
 
 from modelcache.manager.eviction.base import EvictionBase
 from .arc_cache import ARC
-from .wtinylfu_cache import WTinyLFUEviction
+from .wtinylfu_cache import W2TinyLFU
 
 
 def popitem_wrapper(func, wrapper_func, clean_size):
@@ -30,7 +30,7 @@ class MemoryCacheEviction(EvictionBase):
         elif self._policy == "RR":
             self._cache = cachetools.RRCache(maxsize=maxsize, **kwargs)
         elif self._policy == "WTINYLFU":
-            self._cache = WTinyLFUEviction(maxsize=maxsize, on_evict=on_evict)
+            self._cache = W2TinyLFU(maxsize=maxsize, on_evict=on_evict)
         elif self._policy == "ARC":
             self._cache = ARC(maxsize=maxsize, on_evict=on_evict)
         else:
