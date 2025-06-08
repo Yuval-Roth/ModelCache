@@ -71,7 +71,7 @@ data_manager = get_data_manager(
                index_params={
                    "metric_type": "COSINE",
                    "index_type": "HNSW",
-                   "params": {"M": 16, "efConstruction": 64},
+                   "params": {"M": 16, "efConstruction": 128},
                 } if manager.MPNet_base else None,
                 search_params={
                     "IVF_FLAT": {"metric_type": "COSINE", "params": {"nprobe": 10}},
@@ -85,7 +85,9 @@ data_manager = get_data_manager(
                     "ANNOY": {"metric_type": "COSINE", "params": {"search_k": 10}},
                     "AUTOINDEX": {"metric_type": "COSINE", "params": {}},
                 } if manager.MPNet_base else None
-    )
+    ),
+    eviction='WTINYLFU',
+    max_size=1000
 )
 
 
