@@ -87,7 +87,7 @@ data_manager = get_data_manager(
                 } if manager.MPNet_base else None
     ),
     eviction='WTINYLFU',
-    max_size=1000
+    max_size=100000
 )
 
 

@@ -54,6 +54,9 @@ class MemoryCacheEviction(EvictionBase):
         cache = self.get_cache(model)
         return cache.get(obj)
 
+    def clear(self, model: str):
+        self.model_to_cache.pop(model, None)
+
     def get_cache(self, model: str):
         if not model in self.model_to_cache:
             self.model_to_cache[model] = self.create_cache(model)

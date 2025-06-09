@@ -277,8 +277,10 @@ class SSDataManager(DataManager):
         return self.v.create(model)
 
     def truncate(self, model):
-        # drop vector base data
+        # drop memory cache data
+        self.eviction_base.clear(model)
 
+        # drop vector base data
         try:
             vector_resp = self.v.rebuild_col(model)
         except Exception as e:
