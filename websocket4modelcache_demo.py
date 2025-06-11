@@ -7,8 +7,8 @@ from modelcache.embedding import EmbeddingModel
 
 async def main():
     cache,_ = await Cache.init(
-        sql_storage="mysql",
-        vector_storage="milvus",
+        sql_storage="sqlite",
+        vector_storage="faiss",
         embedding_model=EmbeddingModel.HUGGINGFACE_ALL_MPNET_BASE_V2,
         embedding_workers_num=1
     )

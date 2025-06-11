@@ -1,14 +1,27 @@
 # -*- coding: utf-8 -*-
+import asyncio
+from contextlib import asynccontextmanager
 import uvicorn
 import json
 from fastapi import FastAPI, Request, HTTPException
-
 from modelcache.cache import Cache
+from modelcache.embedding import EmbeddingModel
 
-# 创建一个FastAPI实例
-app = FastAPI()
+#创建一个FastAPI实例
 
-cache = Cache.init("sqlite", "faiss")
+@asynccontextmanager
+async def startup_event(app: FastAPI):
+    global cache
+    cache, _ = await Cache.init(
+        sql_storage="sqlite",
+        vector_storage="faiss",
+        embedding_model=EmbeddingModel.HUGGINGFACE_ALL_MPNET_BASE_V2,
+        embedding_workers_num=1
+    )
+    yield
+
+app = FastAPI(lifespan=startup_event)
+cache: Cache = None
 
 @app.get("/welcome")
 async def first_fastapi():
@@ -41,7 +54,7 @@ async def user_backend(request: Request):
             except json.JSONDecodeError:
                 raise HTTPException(status_code=101, detail="Invalid JSON format")
 
-        return cache.handle_request(request_data)
+        return await cache.handle_request(request_data)
 
     except Exception as e:
         request_data = raw_body if 'raw_body' in locals() else None
@@ -56,6 +69,6 @@ async def user_backend(request: Request):
         }
         return result
 
-# TODO: 可以修改为在命令行中使用`uvicorn your_module_name:app --host 0.0.0.0 --port 5000 --reload`的命令启动
+
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=5000)
+    uvicorn.run(app, host='0.0.0.0', port=5000, loop="asyncio")
