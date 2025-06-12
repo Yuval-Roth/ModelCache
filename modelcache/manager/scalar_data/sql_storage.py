@@ -7,11 +7,11 @@ import pymysql
 import json
 import base64
 from typing import List
-from modelcache.manager.scalar_data.base import CacheStorage, CacheData
+from modelcache.manager.scalar_data.base import ScalarStorage, CacheData
 from DBUtils.PooledDB import PooledDB
 
 
-class SQLStorage(CacheStorage):
+class SQLStorage(ScalarStorage):
 
     def __init__(
         self,

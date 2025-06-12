@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
 from typing import List
-from modelcache.manager.scalar_data.base import CacheStorage, CacheData
+from modelcache.manager.scalar_data.base import ScalarStorage, CacheData
 import sqlite3
 
 
-class SQLStorage(CacheStorage):
+class SQLStorage(ScalarStorage):
     def __init__(
         self,
         db_type: str = "mysql",

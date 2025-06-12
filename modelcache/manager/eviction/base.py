@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from abc import ABCMeta, abstractmethod
-from typing import Any, List
+from typing import Any, List, Tuple
 
 
 class EvictionBase(metaclass=ABCMeta):
@@ -9,7 +9,11 @@ class EvictionBase(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def put(self, objs: List[Any], model:str):
+    def put(self, obj: Tuple[Any, Any] , model:str):
+        pass
+
+    @abstractmethod
+    def batch_put(self, obj: List[Tuple[Any, Any]], model: str):
         pass
 
     @abstractmethod

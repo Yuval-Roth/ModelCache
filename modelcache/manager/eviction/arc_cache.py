@@ -105,13 +105,12 @@ class ARC(Cache):
         raise KeyError(key)
 
     def pop(self, key, default=None):
-        """
-        Remove key from all lists.
-        """
         for l in (self.t1, self.t2, self.b1, self.b2):
             if key in l:
                 return l.pop(key)
-        return default
+        if default is not None:
+            return default
+        raise KeyError(key)
 
     def clear(self):
         self.t1.clear()

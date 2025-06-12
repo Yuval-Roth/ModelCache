@@ -8,11 +8,13 @@ import cachetools
 from abc import abstractmethod, ABCMeta
 from typing import List, Any, Optional
 from typing import Union, Callable
-from modelcache.manager.scalar_data.base import CacheStorage,CacheData,DataType,Answer,Question
+
+from modelcache.manager.eviction.database_cache import DatabaseCache
+from modelcache.manager.scalar_data.base import ScalarStorage,CacheData,DataType,Answer,Question
 from modelcache.utils.error import CacheError, ParamError
 from modelcache.manager.vector_data.base import VectorStorage, VectorData
-from modelcache.manager.object_data.base import ObjectBase
-from modelcache.manager.eviction.memory_cache import MemoryCacheEviction
+from modelcache.manager.object_data.base import ObjectStorage
+from modelcache.manager.eviction.memory_cache import MemoryCache
 from modelcache.utils.log import modelcache_log
 
 
@@ -64,9 +66,9 @@ class DataManager(metaclass=ABCMeta):
 
     @staticmethod
     def get(
-            cache_base: Union[CacheStorage, str] = None,
+            cache_base: Union[ScalarStorage, str] = None,
             vector_base: Union[VectorStorage, str] = None,
-            object_base: Union[ObjectBase, str] = None,
+            object_base: Union[ObjectStorage, str] = None,
             max_size: int = 3,
             clean_size: int = 1,
             eviction: str = "ARC",
@@ -78,11 +80,11 @@ class DataManager(metaclass=ABCMeta):
             return MapDataManager(data_path, max_size, get_data_container)
 
         if isinstance(cache_base, str):
-            cache_base = CacheStorage.get(name=cache_base)
+            cache_base = ScalarStorage.get(name=cache_base)
         if isinstance(vector_base, str):
             vector_base = VectorStorage.get(name=vector_base)
         if isinstance(object_base, str):
-            object_base = ObjectBase.get(name=object_base)
+            object_base = ObjectStorage.get(name=object_base)
         assert cache_base and vector_base
         return SSDataManager(cache_base, vector_base, object_base, max_size, clean_size,normalize, eviction)
 
@@ -163,9 +165,9 @@ def normalize(vec):
 class SSDataManager(DataManager):
     def __init__(
         self,
-        s: CacheStorage,
+        s: ScalarStorage,
         v: VectorStorage,
-        o: Optional[ObjectBase],
+        o: Optional[ObjectStorage],
         max_size,
         clean_size,
         normalize: bool,
@@ -173,17 +175,20 @@ class SSDataManager(DataManager):
     ):
         self.max_size = max_size
         self.clean_size = clean_size
-        self.s = s
-        self.v = v
-        self.o = o
         self.normalize = normalize
 
         # added
-        self.eviction_base = MemoryCacheEviction(
+        self.memory_cache = MemoryCache(
+            policy=policy,
+            maxsize=max_size,
+            clean_size=clean_size)
+
+        self.database_cache = DatabaseCache(
             policy=policy,
             maxsize=max_size,
             clean_size=clean_size,
-            on_evict=self._evict_ids)
+            scalar_storage=s,
+            vector_storage=v)
 
     def save(self, questions: List[any], answers: List[any], embedding_datas: List[any], **kwargs):
         model = kwargs.pop("model", None)
@@ -231,22 +236,14 @@ class SSDataManager(DataManager):
             ]
 
         for i, embedding_data in enumerate(embedding_datas):
-            if self.o is not None:
-                ans = self._process_answer_data(answers[i])
-            else:
-                ans = answers[i]
-
+            ans = answers[i]
             question = questions[i]
             embedding_data = embedding_data.astype("float32")
             cache_datas.append([ans, question, embedding_data, model])
 
-        ids = self.s.batch_insert(cache_datas)
-        datas = []
-        for i, embedding_data in enumerate(embedding_datas):
-            _id = ids[i]
-            datas.append(VectorData(id=_id, data=embedding_data.astype("float32")))
-            self.eviction_base.put([(_id, cache_datas[i])],model=model)
-        self.v.mul_add(datas,model)
+        ids = self.database_cache.batch_put(cache_datas,model)
+        datas = [(ids[i], embedding_data) for i, embedding_data in enumerate(embedding_datas)]
+        self.memory_cache.batch_put(datas,model=model)
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
         model = kwargs.pop("model")

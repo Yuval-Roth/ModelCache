@@ -2,12 +2,12 @@
 import json
 from typing import List
 from elasticsearch import Elasticsearch, helpers
-from modelcache.manager.scalar_data.base import CacheStorage, CacheData
+from modelcache.manager.scalar_data.base import ScalarStorage, CacheData
 import time
 from snowflake import SnowflakeGenerator
 
 
-class SQLStorage(CacheStorage):
+class SQLStorage(ScalarStorage):
     def __init__(
             self,
             db_type: str = "elasticsearch",

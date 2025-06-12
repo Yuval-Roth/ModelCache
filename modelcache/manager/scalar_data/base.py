@@ -88,7 +88,7 @@ class CacheData:
         self.embedding_data = embedding_data
 
 
-class CacheStorage(metaclass=ABCMeta):
+class ScalarStorage(metaclass=ABCMeta):
     """
     BaseStorage for scalar data.
     """
@@ -103,6 +103,10 @@ class CacheStorage(metaclass=ABCMeta):
 
     @abstractmethod
     def get_data_by_id(self, key):
+        pass
+
+    @abstractmethod
+    def delete_by_ids(self, primary_id):
         pass
 
     @abstractmethod
