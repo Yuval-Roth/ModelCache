@@ -197,7 +197,7 @@ class SSDataManager(DataManager):
 
     def save_query_resp(self, query_resp_dict, **kwargs):
         save_query_start_time = time.time()
-        self.s.insert_query_resp(query_resp_dict, **kwargs)
+        self.database_cache.insert_query_resp(query_resp_dict, **kwargs)
         save_query_delta_time = '{}s'.format(round(time.time() - save_query_start_time, 2))
 
     def _process_answer_data(self, answers: Union[Answer, List[Answer]]):
@@ -239,10 +239,10 @@ class SSDataManager(DataManager):
             ans = answers[i]
             question = questions[i]
             embedding_data = embedding_data.astype("float32")
-            cache_datas.append([ans, question, embedding_data, model])
+            cache_datas.append((None, (ans, question, embedding_data, model)))
 
         ids = self.database_cache.batch_put(cache_datas,model)
-        datas = [(ids[i], embedding_data) for i, embedding_data in enumerate(embedding_datas)]
+        datas = [(ids[i], cache_datas[i]) for i, embedding_data in enumerate(embedding_datas)]
         self.memory_cache.batch_put(datas,model=model)
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
@@ -251,45 +251,50 @@ class SSDataManager(DataManager):
         cache_hit = self.memory_cache.get(_id, model=model)
         if cache_hit is not None:
             return cache_hit
-        cache_data = self.database_cache.s.get_data_by_id(res_data[1])
+        cache_data = self.database_cache.get(res_data[1],model=model)
         if cache_data is None:
             return None
         return cache_data
 
     def update_hit_count(self, primary_id, **kwargs):
-        self.database_cache.s.update_hit_count_by_id(primary_id)
+        self.database_cache.update_hit_count_by_id(primary_id)
 
     def hit_cache_callback(self, res_data, **kwargs):
         model = kwargs.pop("model")
         self.memory_cache.get(res_data[1], model=model)
 
     def search(self, embedding_data, **kwargs):
-        model = kwargs.pop("model", None)
+        model = kwargs.pop("model")
         if self.normalize:
             embedding_data = normalize(embedding_data)
         top_k = kwargs.get("top_k", -1)
-        return self.database_cache.v.search(data=embedding_data, top_k=top_k, model=model)
+        return self.database_cache.search(data=embedding_data, top_k=top_k, model=model)
 
     def delete(self, id_list, **kwargs):
         model = kwargs.pop("model")
-        try:
-            for _id in id_list:
-                self.memory_cache.get_cache(model).pop(_id, None)
-            v_delete_count = self.database_cache.v.delete(ids=id_list, model=model)
-        except Exception as e:
-            return {'status': 'failed', 'milvus': 'delete milvus data failed, please check! e: {}'.format(e),
-                    'mysql': 'unexecuted'}
-        try:
-            s_delete_count = self.database_cache.s.mark_deleted(id_list)
-        except Exception as e:
-            return {'status': 'failed', 'milvus': 'success',
-                    'mysql': 'delete mysql data failed, please check! e: {}'.format(e)}
-
-        return {'status': 'success', 'milvus': 'delete_count: '+str(v_delete_count),
-                'mysql': 'delete_count: '+str(s_delete_count)}
+        for _id in id_list:
+            self.memory_cache.get_cache(model).pop(_id, None)
+        scalar_count, vector_count = self.database_cache.delete(id_list, model=model)
+        if vector_count == -1:
+            return {
+                'status': 'failed',
+                'milvus': 'delete milvus data failed, please check!',
+                'mysql': 'unexecuted'
+            }
+        if scalar_count == -1:
+            return {
+                'status': 'failed',
+                'milvus': 'success',
+                'mysql': 'delete mysql data failed, please check!'
+            }
+        return {
+            'status': 'success',
+            'milvus': 'delete_count: ' + str(vector_count),
+            'mysql': 'delete_count: ' + str(scalar_count)
+        }
 
     def create_index(self, model, **kwargs):
-        return self.database_cache.v.create(model)
+        return self.database_cache.create_vector(model)
 
     def truncate(self, model):
         self.memory_cache.clear(model)
@@ -307,30 +312,24 @@ class SSDataManager(DataManager):
                     'ScalarDB': 'truncate scalar data failed, please check! e: {}'.format(e)}
         return {'status': 'success', 'VectorDB': 'rebuild', 'ScalarDB': 'delete_count: ' + str(delete_count)}
 
-    # added
     def _evict_ids(self, ids, **kwargs):
         model = kwargs.get("model")
         if not ids or any(i is None for i in ids):
             modelcache_log.warning("Skipping eviction for invalid IDs: %s", ids)
             return
-
-        if isinstance(ids,str):
+        if isinstance(ids, str):
             ids = [ids]
-
         for _id in ids:
             self.memory_cache.get_cache(model).pop(_id, None)
-
-        try:
-            self.database_cache.s.mark_deleted(ids)
-            modelcache_log.info("Evicted from scalar storage: %s", ids)
-        except Exception as e:
-            modelcache_log.error("Failed to delete from scalar storage: %s", str(e))
-
-        try:
-            self.database_cache.v.delete(ids, model=model)
+        scalar_count, vector_count = self.database_cache.delete(ids, model=model)
+        if vector_count == -1:
+            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", model, ids)
+        else:
             modelcache_log.info("Evicted from vector storage (model=%s): %s", model, ids)
-        except Exception as e:
-            modelcache_log.error("Failed to delete from vector storage (model=%s): %s", model, str(e))
+        if scalar_count == -1:
+            modelcache_log.error("Failed to delete from scalar storage: %s", ids)
+        else:
+            modelcache_log.info("Evicted from scalar storage: %s", ids)
 
     def flush(self):
         self.database_cache.flush()

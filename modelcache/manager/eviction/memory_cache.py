@@ -8,6 +8,7 @@ from .wtinylfu_cache import W2TinyLFU
 
 
 class MemoryCache(EvictionBase):
+
     def __init__(self, policy: str, maxsize: int, clean_size: int, **kwargs):
         self._policy = policy.upper()
         self.model_to_cache = dict()
@@ -42,17 +43,35 @@ class MemoryCache(EvictionBase):
         for key, value in objs:
             cache[key] = value
 
+    def insert_query_resp(self, query_resp_dict: Any, **kwargs):
+        pass
+
+    def update_hit_count_by_id(self, primary_id: Any):
+        pass
+
     def get(self, obj: Any, model: str):
         cache = self.get_cache(model)
         return cache.get(obj)
 
+    def search(self, data: Any, top_k: int, model: str):
+        pass
+
     def clear(self, model: str):
         self.model_to_cache.pop(model, None)
+
+    def delete(self, id_list: Any, model: str):
+        pass
 
     def get_cache(self, model: str):
         if not model in self.model_to_cache:
             self.model_to_cache[model] = self.create_cache(model)
         return self.model_to_cache[model]
+
+    def flush(self):
+        pass
+
+    def close(self):
+        pass
 
     @property
     def policy(self) -> str:
