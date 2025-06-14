@@ -301,7 +301,7 @@ class Cache:
                 metric_type=similarity_metric_type,
             ),
             eviction='WTINYLFU',
-            max_size=100000,
+            max_size=15,
             normalize=normalize,
         )
 

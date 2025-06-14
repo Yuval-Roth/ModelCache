@@ -246,7 +246,7 @@ class SSDataManager(DataManager):
         for i, embedding_data in enumerate(embedding_datas):
             _id = ids[i]
             datas.append((_id, cache_datas[i]))
-            self.memory_cache.put((_id, cache_datas[i]), model=model)
+            self.memory_cache.put((_id, cache_datas[i][1]), model=model)
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
         model = kwargs.pop("model")

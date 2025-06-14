@@ -36,16 +36,11 @@ class DatabaseCache(EvictionBase):
                 cache_datas.append((answer, question, embedding_data, model))
             else:
                 raise ValueError("Each value must be a tuple (answer, question, embedding_data, model)")
-
-        # Try scalar batch insert
         try:
             scalar_ids = self.scalar_storage.batch_insert(cache_datas)
         except Exception as e:
-            # Optionally: import logging and log error
             print(f"Error in scalar_storage.batch_insert: {e}")
             return None
-
-        # Try building vector_datas (in case of indexing error or similar)
         try:
             for idx, (key, value) in enumerate(objs):
                 embedding_data = value[2]
@@ -54,15 +49,12 @@ class DatabaseCache(EvictionBase):
         except Exception as e:
             print(f"Error while building vector_datas: {e}")
             return None
-
-        # Try vector mul_add
         if vector_datas:
             try:
                 self.vector_storage.mul_add(vector_datas, model=model)
             except Exception as e:
                 print(f"Error in vector_storage.mul_add: {e}")
                 return None
-
         return scalar_ids
 
     def insert_query_resp(self, query_resp_dict: Any, **kwargs):
