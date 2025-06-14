@@ -3,8 +3,8 @@ from typing import Any, Callable, List, Tuple
 import cachetools
 
 from modelcache.manager.eviction.base import EvictionBase
-from modelcache_mm.manager.scalar_data.base import CacheData
-from modelcache_mm.manager.vector_data.base import VectorData
+from modelcache.manager.scalar_data.base import CacheData
+from modelcache.manager.vector_data.base import VectorData
 from .arc_cache import ARC
 from .wtinylfu_cache import W2TinyLFU
 from ..scalar_data.base import ScalarStorage
@@ -33,16 +33,36 @@ class DatabaseCache(EvictionBase):
         for key, value in objs:
             if isinstance(value, tuple) and len(value) == 4:
                 answer, question, embedding_data, model_name = value
-                cache_datas.append(CacheData(question=question, answers=[answer], embedding_data=embedding_data))
+                cache_datas.append((answer, question, embedding_data, model))
             else:
                 raise ValueError("Each value must be a tuple (answer, question, embedding_data, model)")
-        scalar_ids = self.scalar_storage.batch_insert(cache_datas)
-        for idx, (key, value) in enumerate(objs):
-            embedding_data = value[2]
-            if scalar_ids and embedding_data is not None:
-                vector_datas.append(VectorData(id=scalar_ids[idx], data=embedding_data))
+
+        # Try scalar batch insert
+        try:
+            scalar_ids = self.scalar_storage.batch_insert(cache_datas)
+        except Exception as e:
+            # Optionally: import logging and log error
+            print(f"Error in scalar_storage.batch_insert: {e}")
+            return None
+
+        # Try building vector_datas (in case of indexing error or similar)
+        try:
+            for idx, (key, value) in enumerate(objs):
+                embedding_data = value[2]
+                if scalar_ids and embedding_data is not None:
+                    vector_datas.append(VectorData(id=scalar_ids[idx], data=embedding_data))
+        except Exception as e:
+            print(f"Error while building vector_datas: {e}")
+            return None
+
+        # Try vector mul_add
         if vector_datas:
-            self.vector_storage.mul_add(vector_datas, model=model)
+            try:
+                self.vector_storage.mul_add(vector_datas, model=model)
+            except Exception as e:
+                print(f"Error in vector_storage.mul_add: {e}")
+                return None
+
         return scalar_ids
 
     def insert_query_resp(self, query_resp_dict: Any, **kwargs):
@@ -69,6 +89,22 @@ class DatabaseCache(EvictionBase):
         except Exception as e:
             scalar_count = -1
         return scalar_count, vector_count
+
+    def truncate(self, model: str):
+        vector_status = 'rebuild'
+        scalar_status = -1
+        try:
+            vector_resp = self.vector_storage.rebuild_col(model)
+            if vector_resp:
+                vector_status = vector_resp
+        except Exception as e:
+            vector_status = f'truncate VectorDB data failed, please check! e: {e}'
+        if vector_status == 'rebuild':
+            try:
+                scalar_status = self.scalar_storage.model_deleted(model)
+            except Exception as e:
+                scalar_status = f'truncate scalar data failed, please check! e: {e}'
+        return scalar_status, vector_status
 
     def clear(self, model: str):
         pass

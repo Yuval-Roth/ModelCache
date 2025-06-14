@@ -33,6 +33,9 @@ class MemoryCache(EvictionBase):
             raise ValueError(f"Unknown policy {self.policy}")
         return cache
 
+    def create_vector(self, model: str):
+        pass
+
     def put(self, obj: Tuple[Any, Any], model: str):
         cache = self.get_cache(model)
         key, value = obj
@@ -60,6 +63,9 @@ class MemoryCache(EvictionBase):
         self.model_to_cache.pop(model, None)
 
     def delete(self, id_list: Any, model: str):
+        pass
+
+    def truncate(self, model: str):
         pass
 
     def get_cache(self, model: str):

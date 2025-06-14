@@ -106,10 +106,6 @@ class ScalarStorage(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def delete_by_ids(self, primary_id):
-        pass
-
-    @abstractmethod
     def mark_deleted(self, keys):
         pass
 

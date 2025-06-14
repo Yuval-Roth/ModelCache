@@ -239,7 +239,7 @@ class SSDataManager(DataManager):
             ans = answers[i]
             question = questions[i]
             embedding_data = embedding_data.astype("float32")
-            cache_datas.append((None, (ans, question, embedding_data, model)))
+            cache_datas.append([None, (ans, question, embedding_data, model)])
 
         ids = self.database_cache.batch_put(cache_datas,model)
         datas = [(ids[i], cache_datas[i]) for i, embedding_data in enumerate(embedding_datas)]
@@ -298,19 +298,24 @@ class SSDataManager(DataManager):
 
     def truncate(self, model):
         self.memory_cache.clear(model)
-        try:
-            vector_resp = self.database_cache.v.rebuild_col(model)
-        except Exception as e:
-            return {'status': 'failed', 'VectorDB': 'truncate VectorDB data failed, please check! e: {}'.format(e),
-                    'ScalarDB': 'unexecuted'}
-        if vector_resp:
-            return {'status': 'failed', 'VectorDB': vector_resp, 'ScalarDB': 'unexecuted'}
-        try:
-            delete_count = self.database_cache.s.model_deleted(model)
-        except Exception as e:
-            return {'status': 'failed', 'VectorDB': 'rebuild',
-                    'ScalarDB': 'truncate scalar data failed, please check! e: {}'.format(e)}
-        return {'status': 'success', 'VectorDB': 'rebuild', 'ScalarDB': 'delete_count: ' + str(delete_count)}
+        scalar_status, vector_status = self.database_cache.truncate(model)
+        if vector_status != 'rebuild':
+            return {
+                'status': 'failed',
+                'VectorDB': vector_status,
+                'ScalarDB': 'unexecuted'
+            }
+        if isinstance(scalar_status, str) and 'failed' in scalar_status:
+            return {
+                'status': 'failed',
+                'VectorDB': 'rebuild',
+                'ScalarDB': scalar_status
+            }
+        return {
+            'status': 'success',
+            'VectorDB': 'rebuild',
+            'ScalarDB': 'delete_count: ' + str(scalar_status)
+        }
 
     def _evict_ids(self, ids, **kwargs):
         model = kwargs.get("model")

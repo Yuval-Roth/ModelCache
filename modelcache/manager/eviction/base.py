@@ -41,6 +41,10 @@ class EvictionBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def truncate(self, model: str):
+        pass
+
+    @abstractmethod
     def flush(self):
         pass
 
