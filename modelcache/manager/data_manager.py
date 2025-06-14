@@ -242,8 +242,11 @@ class SSDataManager(DataManager):
             cache_datas.append([None, (ans, question, embedding_data, model)])
 
         ids = self.database_cache.batch_put(cache_datas,model)
-        datas = [(ids[i], cache_datas[i]) for i, embedding_data in enumerate(embedding_datas)]
-        self.memory_cache.batch_put(datas,model=model)
+        datas = []
+        for i, embedding_data in enumerate(embedding_datas):
+            _id = ids[i]
+            datas.append((_id, cache_datas[i]))
+            self.memory_cache.put((_id, cache_datas[i]), model=model)
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
         model = kwargs.pop("model")
