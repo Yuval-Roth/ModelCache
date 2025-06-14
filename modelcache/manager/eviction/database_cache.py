@@ -10,12 +10,13 @@ from ..vector_data.base import VectorStorage
 
 
 class DatabaseCache(EvictionBase):
+
     def __init__(self, policy: str, maxsize: int, clean_size: int, scalar_storage: ScalarStorage, vector_storage: VectorStorage, **kwargs):
         self._policy = policy.upper()
         self.maxsize = maxsize
         self.clean_size = clean_size
         self.kwargs = kwargs
-        self.scalar_storage= scalar_storage
+        self.scalar_storage = scalar_storage
         self.vector_storage = vector_storage
 
     def put(self, obj: Tuple[Any, Any], model: str):
@@ -29,6 +30,15 @@ class DatabaseCache(EvictionBase):
 
     def clear(self, model: str):
         pass
+
+    def flush(self):
+        self.scalar_storage.flush()
+        self.vector_storage.flush()
+
+    def close(self):
+        self.scalar_storage.close()
+        self.vector_storage.close()
+
 
     @property
     def policy(self) -> str:

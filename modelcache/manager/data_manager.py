@@ -247,40 +247,40 @@ class SSDataManager(DataManager):
 
     def get_scalar_data(self, res_data, **kwargs) -> Optional[CacheData]:
         model = kwargs.pop("model")
-        #Get Data from RAM Cache
         _id = res_data[1]
-        cache_hit = self.eviction_base.get(_id, model=model)
+        cache_hit = self.memory_cache.get(_id, model=model)
         if cache_hit is not None:
             return cache_hit
-        cache_data = self.s.get_data_by_id(res_data[1])
+        cache_data = self.database_cache.s.get_data_by_id(res_data[1])
         if cache_data is None:
             return None
         return cache_data
 
     def update_hit_count(self, primary_id, **kwargs):
-        self.s.update_hit_count_by_id(primary_id)
+        self.database_cache.s.update_hit_count_by_id(primary_id)
 
     def hit_cache_callback(self, res_data, **kwargs):
-        self.eviction_base.get(res_data[1])
+        model = kwargs.pop("model")
+        self.memory_cache.get(res_data[1], model=model)
 
     def search(self, embedding_data, **kwargs):
         model = kwargs.pop("model", None)
         if self.normalize:
             embedding_data = normalize(embedding_data)
         top_k = kwargs.get("top_k", -1)
-        return self.v.search(data=embedding_data, top_k=top_k, model=model)
+        return self.database_cache.v.search(data=embedding_data, top_k=top_k, model=model)
 
     def delete(self, id_list, **kwargs):
         model = kwargs.pop("model")
         try:
-            for id in id_list:
-                self.eviction_base.get_cache(model).pop(id, None)  # Remove from in-memory LRU too
-            v_delete_count = self.v.delete(ids=id_list, model=model)
+            for _id in id_list:
+                self.memory_cache.get_cache(model).pop(_id, None)
+            v_delete_count = self.database_cache.v.delete(ids=id_list, model=model)
         except Exception as e:
             return {'status': 'failed', 'milvus': 'delete milvus data failed, please check! e: {}'.format(e),
                     'mysql': 'unexecuted'}
         try:
-            s_delete_count = self.s.mark_deleted(id_list)
+            s_delete_count = self.database_cache.s.mark_deleted(id_list)
         except Exception as e:
             return {'status': 'failed', 'milvus': 'success',
                     'mysql': 'delete mysql data failed, please check! e: {}'.format(e)}
@@ -289,23 +289,19 @@ class SSDataManager(DataManager):
                 'mysql': 'delete_count: '+str(s_delete_count)}
 
     def create_index(self, model, **kwargs):
-        return self.v.create(model)
+        return self.database_cache.v.create(model)
 
     def truncate(self, model):
-        # drop memory cache data
-        self.eviction_base.clear(model)
-
-        # drop vector base data
+        self.memory_cache.clear(model)
         try:
-            vector_resp = self.v.rebuild_col(model)
+            vector_resp = self.database_cache.v.rebuild_col(model)
         except Exception as e:
             return {'status': 'failed', 'VectorDB': 'truncate VectorDB data failed, please check! e: {}'.format(e),
                     'ScalarDB': 'unexecuted'}
         if vector_resp:
             return {'status': 'failed', 'VectorDB': vector_resp, 'ScalarDB': 'unexecuted'}
-        # drop scalar base data
         try:
-            delete_count = self.s.model_deleted(model)
+            delete_count = self.database_cache.s.model_deleted(model)
         except Exception as e:
             return {'status': 'failed', 'VectorDB': 'rebuild',
                     'ScalarDB': 'truncate scalar data failed, please check! e: {}'.format(e)}
@@ -322,25 +318,23 @@ class SSDataManager(DataManager):
             ids = [ids]
 
         for _id in ids:
-            self.eviction_base.get_cache(model).pop(_id, None)
+            self.memory_cache.get_cache(model).pop(_id, None)
 
         try:
-            self.s.mark_deleted(ids)
+            self.database_cache.s.mark_deleted(ids)
             modelcache_log.info("Evicted from scalar storage: %s", ids)
         except Exception as e:
             modelcache_log.error("Failed to delete from scalar storage: %s", str(e))
 
         try:
-            self.v.delete(ids, model=model)
+            self.database_cache.v.delete(ids, model=model)
             modelcache_log.info("Evicted from vector storage (model=%s): %s", model, ids)
         except Exception as e:
             modelcache_log.error("Failed to delete from vector storage (model=%s): %s", model, str(e))
 
     def flush(self):
-        self.s.flush()
-        self.v.flush()
+        self.database_cache.flush()
 
     def close(self):
-        self.s.close()
-        self.v.close()
+        self.database_cache.close()
 

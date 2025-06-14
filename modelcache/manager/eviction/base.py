@@ -20,6 +20,14 @@ class EvictionBase(metaclass=ABCMeta):
     def get(self, obj: Any, model:str):
         pass
 
+    @abstractmethod
+    def flush(self):
+        pass
+
+    @abstractmethod
+    def close(self):
+        pass
+
     @property
     @abstractmethod
     def policy(self) -> str:
