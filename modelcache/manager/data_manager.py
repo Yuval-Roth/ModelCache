@@ -69,7 +69,7 @@ class DataManager(metaclass=ABCMeta):
             object_base: Union[ObjectBase, str] = None,
             max_size: int = 3,
             clean_size: int = 1,
-            eviction: str = "ARC",
+            memory_cache_policy: str = "ARC",
             data_path: str = "data_map.txt",
             get_data_container: Callable = None,
             normalize: bool = True
@@ -84,7 +84,7 @@ class DataManager(metaclass=ABCMeta):
         if isinstance(object_base, str):
             object_base = ObjectBase.get(name=object_base)
         assert cache_base and vector_base
-        return SSDataManager(cache_base, vector_base, object_base, max_size, clean_size,normalize, eviction)
+        return SSDataManager(cache_base, vector_base, object_base, max_size, clean_size,normalize, memory_cache_policy)
 
 
 class MapDataManager(DataManager):

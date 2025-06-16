@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 from modelcache.embedding import MetricType
 from modelcache.utils.time import time_cal
@@ -204,7 +205,7 @@ async def adapt_query(cache_data_convert, *args, **kwargs):
         )
         # 更新命中次数
         try:
-            chat_cache.data_manager.update_hit_count(return_id)
+            asyncio.create_task(asyncio.to_thread(chat_cache.data_manager.update_hit_count,return_id))
         except Exception:
             logging.info('update_hit_count except, please check!')
 

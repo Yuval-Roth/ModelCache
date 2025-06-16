@@ -265,7 +265,9 @@ class Cache:
         #==================================================#
 
         # switching based on embedding_model
-        if embedding_model == EmbeddingModel.HUGGINGFACE_ALL_MPNET_BASE_V2:
+        if (embedding_model == EmbeddingModel.HUGGINGFACE_ALL_MPNET_BASE_V2
+        or  embedding_model == EmbeddingModel.HUGGINGFACE_ALL_MINILM_L6_V2
+        or  embedding_model == EmbeddingModel.HUGGINGFACE_ALL_MINILM_L12_V2):
             query_pre_embedding_func = query_with_role
             insert_pre_embedding_func = query_with_role
             post_process_messages_func = first
@@ -287,8 +289,8 @@ class Cache:
 
         # add more configurations for other embedding models as needed
         else:
-            modelcache_log.error(f"Please add configuration for {embedding_model} in modelcache/__init__.py.")
-            raise CacheError(f"Please add configuration for {embedding_model} in modelcache/__init__.py.")
+            modelcache_log.error(f"Please add configuration for {embedding_model} in modelcache/cache.py.")
+            raise CacheError(f"Please add configuration for {embedding_model} in modelcache/cache.py.")
 
         # ====================== Data manager ==============================#
 
@@ -300,7 +302,7 @@ class Cache:
                 config=vector_config,
                 metric_type=similarity_metric_type,
             ),
-            eviction='ARC',
+            memory_cache_policy='ARC',
             max_size=10000,
             normalize=normalize,
         )
