@@ -1,4 +1,4 @@
-from cachetools import LRUCache, Cache
+from cachetools import LRUCache, Cache, LFUCache
 from readerwriterlock import rwlock
 import random
 
@@ -43,8 +43,8 @@ class W2TinyLFU(Cache):
         self.protected_size = rest - self.probation_size
 
         self.window = LRUCache(maxsize=self.window_size)
-        self.probation = LRUCache(maxsize=self.probation_size)
-        self.protected = LRUCache(maxsize=self.protected_size)
+        self.probation = LFUCache(maxsize=self.probation_size)
+        self.protected = LFUCache(maxsize=self.protected_size)
 
         self.cms = CountMinSketch()
         self.data = {}
