@@ -25,17 +25,20 @@ async def adapt_query(cache_data_convert, *args, **kwargs):
         cache_obj=chat_cache
     )(pre_embedding_data)
 
-    cache_data_list = time_cal(
+    search_time_cal = time_cal(
         chat_cache.data_manager.search,
         func_name="vector_search",
         report_func=chat_cache.report.search,
         cache_obj=chat_cache
-    )(
+    )
+    cache_data_list = await asyncio.to_thread(
+        search_time_cal,
         embedding_data,
         extra_param=context.get("search_func", None),
         top_k=kwargs.pop("top_k", -1),
         model=model
     )
+
     cache_answers = []
     cache_questions = []
     cache_ids = []
@@ -88,8 +91,9 @@ async def adapt_query(cache_data_convert, *args, **kwargs):
         reranker = FlagReranker('BAAI/bge-reranker-v2-m3', use_fp16=False)
         for cache_data in cache_data_list:
             primary_id = cache_data[1]
-            ret = chat_cache.data_manager.get_scalar_data(
-                cache_data, extra_param=context.get("get_scalar_data", None),model=model
+            ret = await asyncio.to_thread(
+                chat_cache.data_manager.get_scalar_data,
+                cache_data, extra_param=context.get("get_scalar_data", None), model=model
             )
             if ret is None:
                 continue
@@ -134,8 +138,9 @@ async def adapt_query(cache_data_convert, *args, **kwargs):
         # 不使用 reranker 时，走原来的逻辑
         for cache_data in cache_data_list:
             primary_id = cache_data[1]
-            ret = chat_cache.data_manager.get_scalar_data(
-                cache_data, extra_param=context.get("get_scalar_data", None),model=model
+            ret = await asyncio.to_thread(
+                chat_cache.data_manager.get_scalar_data,
+                cache_data, extra_param=context.get("get_scalar_data", None), model=model
             )
             if ret is None:
                 continue
